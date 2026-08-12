@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
+from decimal import Decimal
 
 from backend.app import config
 from backend.app.database import db
