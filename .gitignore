@@ -47,3 +47,6 @@ Thumbs.db
 Log/
 logs/
 *.log
+
+# Exclude local study guide
+PROJECT_DOCUMENTATION.md
