@@ -1,0 +1,49 @@
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Dependency directories
+node_modules/
+frontend/node_modules/
+
+# Local database files
+database.json
+test_database.json
+concurrency_test_database.json
+
+# Environment variables & secrets
+.env
+*.env
+backend/app/.env
+.env.*
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor/IDE configs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Build output
+frontend/dist/
+dist/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Log/
+logs/
+*.log
