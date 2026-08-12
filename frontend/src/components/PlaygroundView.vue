@@ -23,7 +23,7 @@
           <label>Target LLM Model</label>
           <select v-model="selectedModel">
             <option v-for="m in approvedModels" :key="m" :value="m">{{ m }} (Approved)</option>
-            <option value="openai/gpt-4o">openai/gpt-4o (Unapproved - Test Block)</option>
+            <option value="anthropic/claude-3-opus">anthropic/claude-3-opus (Unapproved - Test Block)</option>
           </select>
         </div>
 

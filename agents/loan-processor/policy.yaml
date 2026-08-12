@@ -4,6 +4,8 @@ description: "Governance policy for the Loan Processing Agent. Enforces complian
 
 approved_models:
   - "meta-llama/llama-3-8b-instruct:free"
+  - "openai/gpt-4o"
+  - "openai/gpt-4o-mini"
 
 allowed_tools:
   - name: "credit_score_check"
