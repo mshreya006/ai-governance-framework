@@ -22,8 +22,18 @@
         <div class="form-group">
           <label>Target LLM Model</label>
           <select v-model="selectedModel">
-            <option v-for="m in approvedModels" :key="m" :value="m">{{ m }} (Approved)</option>
-            <option value="anthropic/claude-3-opus">anthropic/claude-3-opus (Unapproved - Test Block)</option>
+            <!-- Primary (Real LLMs) first -->
+            <option v-for="m in primaryModels" :key="m" :value="m">
+              {{ m }} (Approved - Primary)
+            </option>
+            <!-- Fallbacks (Mockup LLMs) second -->
+            <option v-for="m in mockModels" :key="m" :value="m">
+              {{ m }} (Approved - Mockup LLM)
+            </option>
+            <!-- Unapproved model for block verification -->
+            <option value="anthropic/claude-3-opus">
+              anthropic/claude-3-opus (Unapproved - Test Block)
+            </option>
           </select>
         </div>
 
@@ -199,6 +209,14 @@ export default {
       default: 'customer-support-agent'
     }
   },
+  computed: {
+    primaryModels() {
+      return this.approvedModels.filter(m => m.startsWith('openai/'));
+    },
+    mockModels() {
+      return this.approvedModels.filter(m => !m.startsWith('openai/'));
+    }
+  },
   data() {
     return {
       selectedAgent: this.initialAgentId,
@@ -230,8 +248,10 @@ export default {
           this.approvedModels = data.policy_json.approved_models || [];
           this.allowedTools = (data.policy_json.allowed_tools || []).map(t => t.name);
           
-          // Set default model
-          if (this.approvedModels.length > 0) {
+          // Set default model: prefer primary OpenAI models if available
+          if (this.primaryModels.length > 0) {
+            this.selectedModel = this.primaryModels[0];
+          } else if (this.approvedModels.length > 0) {
             this.selectedModel = this.approvedModels[0];
           }
           this.selectedTool = null;
