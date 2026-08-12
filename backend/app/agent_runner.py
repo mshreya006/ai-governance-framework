@@ -198,14 +198,16 @@ def run_agent_workflow(
 
     # Construct LLM system context
     system_prompt = (
-        f"You are the Core Agent logic for '{agent_id}'.\n"
-        f"You operate under active governance policies. Do not deviate from tool outputs.\n"
+        f"You are the {agent_id.replace('-', ' ').title()} AI assistant.\n"
+        "You operate under active corporate governance policies. Your task is to fulfill the user's request using the context below.\n"
     )
     if tool_result:
         system_prompt += (
-            f"\nTOOL_RESULT: {json_to_str(tool_result)}\n"
-            "An automated backend database tool was executed on your behalf. The resulting data is provided above in JSON format under 'TOOL_RESULT'. "
-            "You MUST use this data to answer the user's prompt directly. Do not tell the user you cannot look up information—the lookup has already been completed successfully and provided to you!"
+            f"\nDATABASE_LOOKUP_RESULT: {json_to_str(tool_result)}\n\n"
+            "CRITICAL INSTRUCTIONS:\n"
+            "1. An automated database search was already executed on your behalf, and the results are provided above under 'DATABASE_LOOKUP_RESULT'.\n"
+            "2. You have direct access to this data. You MUST formulate your response using this retrieved information.\n"
+            "3. DO NOT state that you cannot access databases or retrieve details based on an ID. The database lookup has already been completed successfully. Present the results to the user directly."
         )
 
     llm_response = call_openrouter_llm(model, system_prompt, prompt)
