@@ -168,7 +168,11 @@ def run_agent_workflow(
         f"You operate under active governance policies. Do not deviate from tool outputs.\n"
     )
     if tool_result:
-        system_prompt += f"\nTOOL_RESULT: {json_to_str(tool_result)}"
+        system_prompt += (
+            f"\nTOOL_RESULT: {json_to_str(tool_result)}\n"
+            "An automated backend database tool was executed on your behalf. The resulting data is provided above in JSON format under 'TOOL_RESULT'. "
+            "You MUST use this data to answer the user's prompt directly. Do not tell the user you cannot look up information—the lookup has already been completed successfully and provided to you!"
+        )
 
     llm_response = call_openrouter_llm(model, system_prompt, prompt)
     
