@@ -103,7 +103,7 @@ def seed_initial_data():
         if os.path.exists(policy_path):
             try:
                 with open(policy_path, "r") as f:
-                    policy_yaml = f.read()
+                    policy_yaml = f.read()  
                 
                 # Validate and parse
                 policy_json = validate_policy_yaml(policy_yaml)
