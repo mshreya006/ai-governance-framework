@@ -172,6 +172,16 @@ def get_agents():
         runtime_policy = db.get_item(f"AGENT#{agent_id}", "POLICY#runtime")
         git_policy = db.get_item(f"AGENT#{agent_id}", "POLICY#latest_git")
         
+        # Lazy-seeding failsafe: trigger bootstrap if records are missing (e.g. serverless cold starts)
+        if not runtime_policy or not git_policy:
+            try:
+                logger.info(f"Policies for '{agent_id}' missing. Running lazy-seeding...")
+                seed_initial_data()
+                runtime_policy = db.get_item(f"AGENT#{agent_id}", "POLICY#runtime")
+                git_policy = db.get_item(f"AGENT#{agent_id}", "POLICY#latest_git")
+            except Exception as e:
+                logger.error(f"Failed to execute lazy seeding for '{agent_id}': {e}")
+                
         if not runtime_policy or not git_policy:
             continue
             
