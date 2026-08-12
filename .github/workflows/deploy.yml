@@ -1,0 +1,48 @@
+name: AI Governance Policy CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate-and-deploy:
+    name: Validate Policies & Deploy Runtime
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Policy Schema Validation
+        run: |
+          python scripts/validate_policy.py
+
+      - name: Run Backend Unit Tests
+        run: |
+          # Set up python path and run unittest discover
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          python -m unittest discover -s backend/tests/ -p "test_*.py"
+
+      - name: Deploy Policies to Active Governance Engine
+        env:
+          BACKEND_API_URL: ${{ secrets.BACKEND_API_URL }}
+          BACKEND_DEPLOY_TOKEN: ${{ secrets.BACKEND_DEPLOY_TOKEN }}
+        run: |
+          # Only run deployment if API secrets are configured
+          if [ -z "$BACKEND_API_URL" ] || [ -z "$BACKEND_DEPLOY_TOKEN" ]; then
+            echo "[INFO] Skipping live API deploy. BACKEND_API_URL or BACKEND_DEPLOY_TOKEN secrets not configured."
+          else
+            python scripts/deploy_policies.py --commit-sha ${{ github.sha }}
+          fi

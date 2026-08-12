@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AWS SAM template for Policy-as-Code AI Governance Framework.
+  Provisions DynamoDB, Lambda, and API Gateway HTTP API.
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: python3.12
+    Architectures:
+      - x86_64
+
+Resources:
+  # 1. DynamoDB Table (Single-Table Design)
+  GovernanceDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ai_governance_data
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      # Clean setup with TTL for audit logs (if desired, optional)
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+
+  # 2. Serverless FastAPI Lambda Function
+  FastApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: backend.app.main.handler
+      Environment:
+        Variables:
+          AWS_REGION: !Ref AWS::Region
+          DYNAMODB_TABLE: !Ref GovernanceDynamoDBTable
+          OPENROUTER_API_KEY: "" # Override via environment or CloudFormation parameters
+          BACKEND_DEPLOY_TOKEN: "dev-token-12345" # Override in CI/CD pipeline
+      Policies:
+        # Least privilege access to read/write DynamoDB
+        - DynamoDBCrudPolicy:
+            TableName: !Ref GovernanceDynamoDBTable
+      Events:
+        # Proxy routes all requests to FastAPI
+        ProxyRoute:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        RootRoute:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+
+Outputs:
+  ApiEndpoint:
+    Description: "HTTP API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  DynamoDbTableName:
+    Description: "Governance DynamoDB Table Name"
+    Value: !Ref GovernanceDynamoDBTable
