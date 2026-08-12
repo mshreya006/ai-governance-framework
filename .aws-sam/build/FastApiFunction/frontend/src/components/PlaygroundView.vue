@@ -22,8 +22,18 @@
         <div class="form-group">
           <label>Target LLM Model</label>
           <select v-model="selectedModel">
-            <option v-for="m in approvedModels" :key="m" :value="m">{{ m }} (Approved)</option>
-            <option value="openai/gpt-4o">openai/gpt-4o (Unapproved - Test Block)</option>
+            <!-- Primary (Real LLMs) first -->
+            <option v-for="m in primaryModels" :key="m" :value="m">
+              {{ m }} (Approved - Primary)
+            </option>
+            <!-- Fallbacks (Mockup LLMs) second -->
+            <option v-for="m in mockModels" :key="m" :value="m">
+              {{ m }} (Approved - Mockup LLM)
+            </option>
+            <!-- Unapproved model for block verification -->
+            <option value="anthropic/claude-3-opus">
+              anthropic/claude-3-opus (Unapproved - Test Block)
+            </option>
           </select>
         </div>
 
@@ -163,8 +173,7 @@
               <!-- Chat output -->
               <div style="flex: 1;">
                 <label>Agent Completion Response</label>
-                <div style="padding: 1rem; border-radius: var(--border-radius-md); background-color: rgba(255,255,255,0.03); border: 1px solid var(--border-color); font-size: 0.9rem; line-height: 1.6; color: var(--text-primary); max-height: 250px; overflow-y: auto;">
-                  {{ runResult.llm_response }}
+                <div style="padding: 1rem; border-radius: var(--border-radius-md); background-color: rgba(255,255,255,0.03); border: 1px solid var(--border-color); font-size: 0.9rem; line-height: 1.6; color: var(--text-primary); max-height: 250px; overflow-y: auto;" v-html="formatResponse(runResult.llm_response)">
                 </div>
               </div>
             </div>
@@ -199,6 +208,14 @@ export default {
       default: 'customer-support-agent'
     }
   },
+  computed: {
+    primaryModels() {
+      return this.approvedModels.filter(m => m.startsWith('openai/'));
+    },
+    mockModels() {
+      return this.approvedModels.filter(m => !m.startsWith('openai/'));
+    }
+  },
   data() {
     return {
       selectedAgent: this.initialAgentId,
@@ -230,8 +247,10 @@ export default {
           this.approvedModels = data.policy_json.approved_models || [];
           this.allowedTools = (data.policy_json.allowed_tools || []).map(t => t.name);
           
-          // Set default model
-          if (this.approvedModels.length > 0) {
+          // Set default model: prefer primary OpenAI models if available
+          if (this.primaryModels.length > 0) {
+            this.selectedModel = this.primaryModels[0];
+          } else if (this.approvedModels.length > 0) {
             this.selectedModel = this.approvedModels[0];
           }
           this.selectedTool = null;
@@ -425,6 +444,32 @@ export default {
       if (status === 'hitl_paused') return 'badge-hitl';
       if (status === 'running') return 'badge-hitl loading-pulse';
       return 'badge-neutral';
+    },
+    formatResponse(text) {
+      if (!text) return '';
+      // Escape HTML to prevent XSS
+      let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      
+      // Convert **text** to bold tags
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Convert list items starting with - or * to bullets
+      const lines = html.split('\n');
+      const processedLines = lines.map(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('- ')) {
+          return `<div style="margin-left: 1.5rem; text-indent: -1rem; margin-top: 0.25rem;">• ${trimmed.slice(2)}</div>`;
+        }
+        if (trimmed.startsWith('* ')) {
+          return `<div style="margin-left: 1.5rem; text-indent: -1rem; margin-top: 0.25rem;">• ${trimmed.slice(2)}</div>`;
+        }
+        return `<div style="min-height: 1rem;">${line}</div>`;
+      });
+      
+      return processedLines.join('');
     }
   }
 };
