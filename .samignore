@@ -1,0 +1,14 @@
+venv/
+.venv/
+frontend/
+.git/
+.github/
+database.json
+test_database.json
+concurrency_test_database.json
+.samignore
+.gitignore
+README.md
+codebase_documentation.md
+walkthrough.md
+task.md

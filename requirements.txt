@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+mangum
+pydantic>=2.0.0
+pyyaml
+boto3
+requests
+python-dotenv

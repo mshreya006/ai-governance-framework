@@ -1,0 +1,42 @@
+agent_id: "customer-support-agent"
+version: "1.0.0"
+description: "Governance policy for the Customer Support AI Agent. Restricts model scope, filters PII, and pauses for human reviews on email dispatches or customer escalations."
+
+approved_models:
+  - "google/gemma-2-9b-it:free"
+  - "meta-llama/llama-3-8b-instruct:free"
+
+allowed_tools:
+  - name: "customer_lookup"
+    description: "Search customer profile records by ID"
+    scopes:
+      - "read"
+  - name: "send_email"
+    description: "Dispatch resolution messages to customers"
+    scopes:
+      - "write"
+
+guardrails:
+  - name: "no_sensitive_data_exposure"
+    type: "pii_redaction"
+    enabled: true
+  - name: "profanity_filter"
+    type: "content_filter"
+    enabled: true
+
+hitl:
+  enabled: true
+  threshold: 0.7
+  rules:
+    - condition: "tool_use == 'send_email'"
+      reason: "All customer emails require administrative approval"
+    - condition: "sentiment_score < 0.3"
+      reason: "Angry customer sentiment triggers mandatory agent handoff"
+
+data_retention:
+  audit_logs_days: 90
+  pii_masking: true
+
+regulatory_frameworks:
+  - "NIST_AI_RMF"
+  - "ISO_42001"

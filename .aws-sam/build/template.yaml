@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'AWS SAM template for Policy-as-Code AI Governance Framework. Provisions
+  DynamoDB, Lambda, and API Gateway HTTP API.
+
+  '
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: python3.12
+    Architectures:
+    - x86_64
+Resources:
+  GovernanceDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ai_governance_data
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: PK
+        AttributeType: S
+      - AttributeName: SK
+        AttributeType: S
+      KeySchema:
+      - AttributeName: PK
+        KeyType: HASH
+      - AttributeName: SK
+        KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+  FastApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: FastApiFunction
+      Handler: backend.app.main.handler
+      Environment:
+        Variables:
+          DYNAMODB_TABLE:
+            Ref: GovernanceDynamoDBTable
+          OPENROUTER_API_KEY: ''
+          BACKEND_DEPLOY_TOKEN: dev-token-12345
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: GovernanceDynamoDBTable
+      Events:
+        ProxyRoute:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        RootRoute:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+    Metadata:
+      SamResourceId: FastApiFunction
+Outputs:
+  ApiEndpoint:
+    Description: HTTP API Gateway endpoint URL
+    Value:
+      Fn::Sub: https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com
+  DynamoDbTableName:
+    Description: Governance DynamoDB Table Name
+    Value:
+      Ref: GovernanceDynamoDBTable
