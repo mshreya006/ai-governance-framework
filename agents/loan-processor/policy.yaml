@@ -1,0 +1,37 @@
+agent_id: "loan-processor-agent"
+version: "1.0.0"
+description: "Governance policy for the Loan Processing Agent. Enforces compliance under financial regulations, filters credit card exposures, and holds loan approvals for credit verification."
+
+approved_models:
+  - "meta-llama/llama-3-8b-instruct:free"
+
+allowed_tools:
+  - name: "credit_score_check"
+    description: "Inquire customer bureau score by SSN"
+    scopes:
+      - "read"
+  - name: "approve_loan"
+    description: "Approve or deny loan request and issue terms"
+    scopes:
+      - "write"
+
+guardrails:
+  - name: "no_sensitive_data_exposure"
+    type: "pii_redaction"
+    enabled: true
+
+hitl:
+  enabled: true
+  threshold: 0.5
+  rules:
+    - condition: "tool_use == 'approve_loan'"
+      reason: "All financial loan disbursements require credit officer approval"
+
+data_retention:
+  audit_logs_days: 180
+  pii_masking: true
+
+regulatory_frameworks:
+  - "NIST_AI_RMF"
+  - "GDPR"
+  - "FCRA"
