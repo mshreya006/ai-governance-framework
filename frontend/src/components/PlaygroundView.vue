@@ -173,8 +173,7 @@
               <!-- Chat output -->
               <div style="flex: 1;">
                 <label>Agent Completion Response</label>
-                <div style="padding: 1rem; border-radius: var(--border-radius-md); background-color: rgba(255,255,255,0.03); border: 1px solid var(--border-color); font-size: 0.9rem; line-height: 1.6; color: var(--text-primary); max-height: 250px; overflow-y: auto;">
-                  {{ runResult.llm_response }}
+                <div style="padding: 1rem; border-radius: var(--border-radius-md); background-color: rgba(255,255,255,0.03); border: 1px solid var(--border-color); font-size: 0.9rem; line-height: 1.6; color: var(--text-primary); max-height: 250px; overflow-y: auto;" v-html="formatResponse(runResult.llm_response)">
                 </div>
               </div>
             </div>
@@ -445,6 +444,32 @@ export default {
       if (status === 'hitl_paused') return 'badge-hitl';
       if (status === 'running') return 'badge-hitl loading-pulse';
       return 'badge-neutral';
+    },
+    formatResponse(text) {
+      if (!text) return '';
+      // Escape HTML to prevent XSS
+      let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      
+      // Convert **text** to bold tags
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Convert list items starting with - or * to bullets
+      const lines = html.split('\n');
+      const processedLines = lines.map(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('- ')) {
+          return `<div style="margin-left: 1.5rem; text-indent: -1rem; margin-top: 0.25rem;">• ${trimmed.slice(2)}</div>`;
+        }
+        if (trimmed.startsWith('* ')) {
+          return `<div style="margin-left: 1.5rem; text-indent: -1rem; margin-top: 0.25rem;">• ${trimmed.slice(2)}</div>`;
+        }
+        return `<div style="min-height: 1rem;">${line}</div>`;
+      });
+      
+      return processedLines.join('');
     }
   }
 };
