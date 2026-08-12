@@ -6,7 +6,31 @@ import boto3
 from botocore.exceptions import ClientError
 from backend.app import config
 
+from decimal import Decimal
+
 logger = logging.getLogger(__name__)
+
+def convert_floats_to_decimal(obj):
+    """Recursively convert float to Decimal for DynamoDB write compatibility."""
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    if isinstance(obj, dict):
+        return {k: convert_floats_to_decimal(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [convert_floats_to_decimal(v) for v in obj]
+    return obj
+
+def convert_decimals_to_float(obj):
+    """Recursively convert Decimal back to float/int for application & JSON compatibility."""
+    if isinstance(obj, Decimal):
+        if obj % 1 == 0:
+            return int(obj)
+        return float(obj)
+    if isinstance(obj, dict):
+        return {k: convert_decimals_to_float(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [convert_decimals_to_float(v) for v in obj]
+    return obj
 
 class DatabaseClient:
     """
@@ -67,7 +91,8 @@ class DatabaseClient:
         if self.use_dynamodb:
             try:
                 response = self.table.get_item(Key={"PK": pk, "SK": sk})
-                return response.get("Item")
+                item = response.get("Item")
+                return convert_decimals_to_float(item) if item else None
             except ClientError as e:
                 logger.error(f"DynamoDB GetItem Error: {e}")
                 return None
@@ -84,7 +109,8 @@ class DatabaseClient:
 
         if self.use_dynamodb:
             try:
-                self.table.put_item(Item=item_copy)
+                dynamodb_item = convert_floats_to_decimal(item_copy)
+                self.table.put_item(Item=dynamodb_item)
             except ClientError as e:
                 logger.error(f"DynamoDB PutItem Error: {e}")
                 raise e
@@ -106,7 +132,8 @@ class DatabaseClient:
                     key_condition = boto3.dynamodb.conditions.Key("PK").eq(pk)
                 
                 response = self.table.query(KeyConditionExpression=key_condition)
-                return response.get("Items", [])
+                items = response.get("Items", [])
+                return [convert_decimals_to_float(item) for item in items]
             except ClientError as e:
                 logger.error(f"DynamoDB Query Error: {e}")
                 return []

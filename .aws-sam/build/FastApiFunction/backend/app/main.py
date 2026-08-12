@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
+from decimal import Decimal
 
 from backend.app import config
 from backend.app.database import db
@@ -102,7 +103,7 @@ def seed_initial_data():
         if os.path.exists(policy_path):
             try:
                 with open(policy_path, "r") as f:
-                    policy_yaml = f.read()
+                    policy_yaml = f.read()  
                 
                 # Validate and parse
                 policy_json = validate_policy_yaml(policy_yaml)
@@ -172,6 +173,16 @@ def get_agents():
         runtime_policy = db.get_item(f"AGENT#{agent_id}", "POLICY#runtime")
         git_policy = db.get_item(f"AGENT#{agent_id}", "POLICY#latest_git")
         
+        # Lazy-seeding failsafe: trigger bootstrap if records are missing (e.g. serverless cold starts)
+        if not runtime_policy or not git_policy:
+            try:
+                logger.info(f"Policies for '{agent_id}' missing. Running lazy-seeding...")
+                seed_initial_data()
+                runtime_policy = db.get_item(f"AGENT#{agent_id}", "POLICY#runtime")
+                git_policy = db.get_item(f"AGENT#{agent_id}", "POLICY#latest_git")
+            except Exception as e:
+                logger.error(f"Failed to execute lazy seeding for '{agent_id}': {e}")
+                
         if not runtime_policy or not git_policy:
             continue
             

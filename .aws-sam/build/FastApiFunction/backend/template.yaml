@@ -4,6 +4,11 @@ Description: >
   AWS SAM template for Policy-as-Code AI Governance Framework.
   Provisions DynamoDB, Lambda, and API Gateway HTTP API.
 
+Parameters:
+  OpenRouterApiKey:
+    Type: String
+    NoEcho: true
+
 Globals:
   Function:
     Timeout: 30
@@ -42,7 +47,7 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_TABLE: !Ref GovernanceDynamoDBTable
-          OPENROUTER_API_KEY: "" # Override via environment or CloudFormation parameters
+          OPENROUTER_API_KEY: !Ref OpenRouterApiKey
           BACKEND_DEPLOY_TOKEN: "dev-token-12345" # Override in CI/CD pipeline
       Policies:
         # Least privilege access to read/write DynamoDB

@@ -4,6 +4,10 @@ Description: 'AWS SAM template for Policy-as-Code AI Governance Framework. Provi
   DynamoDB, Lambda, and API Gateway HTTP API.
 
   '
+Parameters:
+  OpenRouterApiKey:
+    Type: String
+    NoEcho: true
 Globals:
   Function:
     Timeout: 30
@@ -38,7 +42,8 @@ Resources:
         Variables:
           DYNAMODB_TABLE:
             Ref: GovernanceDynamoDBTable
-          OPENROUTER_API_KEY: ''
+          OPENROUTER_API_KEY:
+            Ref: OpenRouterApiKey
           BACKEND_DEPLOY_TOKEN: dev-token-12345
       Policies:
       - DynamoDBCrudPolicy:
