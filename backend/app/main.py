@@ -2,7 +2,7 @@ import os
 import uuid
 import yaml
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Header, status
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
