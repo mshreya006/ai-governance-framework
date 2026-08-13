@@ -2,7 +2,7 @@ import os
 import uuid
 import yaml
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Header, status
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
@@ -64,7 +64,7 @@ class HitlDecisionRequest(BaseModel):
 
 def write_audit_log(agent_id: str, event_type: str, severity: str, message: str, details: Dict[str, Any] = None, commit_sha: str = None):
     """Utility to write governance ledger entries."""
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = datetime.now(timezone.utc).isoformat()
     log_id = str(uuid.uuid4())
     audit_item = {
         "log_id": log_id,
@@ -108,7 +108,7 @@ def seed_initial_data():
                 # Validate and parse
                 policy_json = validate_policy_yaml(policy_yaml)
                 commit_sha = "initial-git-commit-sha-000000000000"
-                timestamp = datetime.utcnow().isoformat()
+                timestamp = datetime.now(timezone.utc).isoformat()
                 
                 # Write Policy records
                 policy_record = {
@@ -281,7 +281,7 @@ def deploy_policy(payload: DeployPolicyRequest, x_deploy_token: Optional[str] = 
         )
         raise HTTPException(status_code=400, detail=f"Policy Validation Failed: {e}")
 
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = datetime.now(timezone.utc).isoformat()
     policy_record = {
         "agent_id": payload.agent_id,
         "commit_sha": payload.commit_sha,
@@ -325,7 +325,7 @@ def simulate_policy_drift(agent_id: str, payload: DriftSimulateRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid Policy YAML: {e}")
         
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = datetime.now(timezone.utc).isoformat()
     runtime_record = {
         "agent_id": agent_id,
         "commit_sha": "OUT-OF-BAND-MANUAL-CHANGE",
@@ -357,7 +357,7 @@ def revert_policy_drift(agent_id: str):
     if not git_policy:
         raise HTTPException(status_code=400, detail="No Git policy record found to revert to.")
         
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = datetime.now(timezone.utc).isoformat()
     runtime_record = dict(git_policy)
     runtime_record["version_tag"] = "runtime"
     runtime_record["timestamp"] = timestamp
@@ -436,7 +436,7 @@ def run_governed_workload(agent_id: str, request: ExecuteWorkloadRequest):
     # Case B: HITL Triggered
     if evaluation.get("hitl_required", False):
         request_id = f"req-{uuid.uuid4().hex[:10]}"
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
         
         hitl_item = {
             "request_id": request_id,
@@ -529,7 +529,7 @@ def decide_hitl_request(agent_id: str, request_id: str, payload: HitlDecisionReq
     if decision not in ["APPROVED", "REJECTED"]:
         raise HTTPException(status_code=400, detail="Decision must be either APPROVED or REJECTED.")
         
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = datetime.now(timezone.utc).isoformat()
     hitl_item["status"] = decision
     hitl_item["decided_at"] = timestamp
     hitl_item["decision_by"] = "Governance Console Admin"
