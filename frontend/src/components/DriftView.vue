@@ -97,7 +97,6 @@
               <label>Select Drift Template</label>
               <select v-model="driftTemplate" style="width: 100%;">
                 <option value="threshold">Alter HITL Threshold (Set to 0.9)</option>
-                <option value="model">Approve Unapproved Model (Add 'openai/gpt-4o')</option>
                 <option value="tool">Disallow Support Tool (Remove 'customer_lookup')</option>
               </select>
             </div>
